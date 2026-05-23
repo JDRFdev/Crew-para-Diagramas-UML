@@ -1,56 +1,70 @@
-# {{crew_name}} Crew
+# Crew para Diagramas UML
 
-Welcome to the {{crew_name}} Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+Este proyecto utiliza CrewAI para automatizar la creacion de diagramas UML a partir de una descripcion tecnica. El sistema utiliza un flujo (Flow) de dos cuadrillas (Crews) especializadas y herramientas personalizadas de Python para la integracion con servicios externos.
 
-## Installation
+## Que hace este proyecto?
 
-Ensure you have Python >=3.10 <3.14 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling, offering a seamless setup and execution experience.
+1.  Crew de Analisis: Lee una descripcion del sistema (desde system.txt), analiza la problematica y define que diagramas UML son necesarios (Clases, Secuencia, etc.).
+2.  Crew de Desarrollo: Toma el analisis, genera el codigo PlantUML y utiliza una herramienta personalizada (Custom Tool) para:
+    *   Convertir el codigo en una imagen PNG usando el renderizador de PlantUML.
+    *   Subir el diagrama a una estructura organizada en Google Drive usando la API oficial de Google.
 
-First, if you haven't already, install uv:
+---
 
-```bash
-pip install uv
-```
+## Requisitos e Instalacion
 
-Next, navigate to your project directory and install the dependencies:
+### 1. Clonar el repositorio e instalar dependencias
+Este proyecto utiliza uv para una gestion ultra-rapida de paquetes.
 
-(Optional) Lock the dependencies and install them by using the CLI command:
-```bash
+`ash
+# Instalar dependencias
 crewai install
-```
+`
 
-### Customizing
+### 2. Configuracion del Entorno (.env)
+Crea un archivo .env en la raiz del proyecto con las siguientes variables:
 
-**Add your `OPENAI_API_KEY` into the `.env` file**
+`env
+MODEL=gpt-4o-mini  # O tu modelo preferido
+OPENAI_API_KEY=tu_api_key_aqui
+`
 
-- Modify `src/diagramas_uml/config/agents.yaml` to define your agents
-- Modify `src/diagramas_uml/config/tasks.yaml` to define your tasks
-- Modify `src/diagramas_uml/crew.py` to add your own logic, tools and specific args
-- Modify `src/diagramas_uml/main.py` to add custom inputs for your agents and tasks
+---
 
-## Running the Project
+## Integracion con Google Drive (Paso a Paso)
 
-To kickstart your flow and begin execution, run this from the root folder of your project:
+Para que el sistema pueda subir los diagramas a tu Drive, necesitas un archivo de credenciales:
 
-```bash
-crewai run
-```
+1.  Ve a Google Cloud Console (https://console.cloud.google.com/).
+2.  Crea un nuevo proyecto.
+3.  Habilita la Google Drive API.
+4.  Configura la Pantalla de Consentimiento OAuth (selecciona 'External' y a�ade tu email como usuario de prueba).
+5.  Ve a Credenciales -> Crear Credenciales -> ID de cliente de OAuth.
+6.  Selecciona Aplicacion de escritorio.
+7.  Descarga el archivo JSON.
+8.  IMPORTANTE: Renombra el archivo descargado a client_secret_XXXX.json (asegurate de que el nombre coincida con el que busca la herramienta en custom_tool.py) y colocalo en la raiz del proyecto.
 
-This command initializes the Diagramas_UML Flow as defined in your configuration.
+---
 
-This example, unmodified, will run a content creation flow on AI Agents and save the output to `output/post.md`.
+## Como usar el proyecto
 
-## Understanding Your Crew
+1.  Escribe la descripcion de tu sistema en el archivo system.txt.
+2.  Ejecuta el flujo principal:
+    `ash
+    crewai flow kickoff
+    `
+3.  La primera vez que lo ejecutes, se abrira una ventana en tu navegador pidiendo permiso para acceder a Google Drive. Autoriza la aplicacion.
+4.  Busca tus diagramas en tu Google Drive dentro de la carpeta: Diagramas UML / [Nombre de tu Proyecto].
 
-The Diagramas_UML Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
+---
 
-## Support
+## Estructura del Proyecto
 
-For support, questions, or feedback regarding the {{crew_name}} Crew or crewAI.
+*   src/diagramas_uml/main.py: Orquestador principal del flujo.
+*   crews/crew_analisis/: Logica de analisis de arquitectura.
+*   crews/crew_desarrollo/: Logica de generacion y subida de diagramas.
+*   src/diagramas_uml/crews/crew_desarrollo/src/crew_desarrollo/tools/custom_tool.py: Herramienta de integracion con Google Drive.
+*   output/: Logs locales y reportes generados.
 
-- Visit our [documentation](https://docs.crewai.com)
-- Reach out to us through our [GitHub repository](https://github.com/joaomdmoura/crewai)
-- [Join our Discord](https://discord.com/invite/X4JWnZnxPb)
-- [Chat with our docs](https://chatg.pt/DWjSBZn)
+---
 
-Let's create wonders together with the power and simplicity of crewAI.

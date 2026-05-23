@@ -1,92 +1,71 @@
 #!/usr/bin/env python
 from pathlib import Path
-
 from pydantic import BaseModel
-
 from crewai.flow import Flow, listen, start
+from diagramas_uml.crews.crew_analisis.src.crew_analisis.crew import CrewAnalisis
+from diagramas_uml.crews.crew_desarrollo.src.crew_desarrollo.crew import CrewDesarrollo
 
-from diagramas_uml.crews.content_crew.content_crew import ContentCrew
+class UMLState(BaseModel):
+    system_description: str = ""
+    architecture_report: str = ""
+    uml_code: str = ""
+    deployment_log: str = ""
 
-
-class ContentState(BaseModel):
-    topic: str = ""
-    outline: str = ""
-    draft: str = ""
-    final_post: str = ""
-
-
-class ContentFlow(Flow[ContentState]):
+class UMLFlow(Flow[UMLState]):
 
     @start()
-    def plan_content(self, crewai_trigger_payload: dict = None):
-        print("Planning content")
+    def load_system_description(self):
+        print("Cargando descripción del sistema desde system.txt...")
+        try:
+            with open("system.txt", "r", encoding="utf-8") as f:
+                self.state.system_description = f.read().strip()
+            print(f"Sistema a analizar: {self.state.system_description[:50]}...")
+        except FileNotFoundError:
+            print("Error: No se encontró el archivo system.txt en la raíz.")
+            self.state.system_description = "Sistema de restaurante básico"
 
-        if crewai_trigger_payload:
-            self.state.topic = crewai_trigger_payload.get("topic", "AI Agents")
-            print(f"Using trigger payload: {crewai_trigger_payload}")
-        else:
-            self.state.topic = "AI Agents"
-
-        print(f"Topic: {self.state.topic}")
-
-    @listen(plan_content)
-    def generate_content(self):
-        print(f"Generating content on: {self.state.topic}")
+    @listen(load_system_description)
+    def analyze_architecture(self):
+        print("Iniciando Crew de Análisis...")
         result = (
-            ContentCrew()
-            .crew()
-            .kickoff(inputs={"topic": self.state.topic})
+            CrewAnalisis()
+            .crew_analisis()
+            .kickoff(inputs={"system": self.state.system_description})
         )
+        self.state.architecture_report = result.raw
+        print("Análisis de arquitectura completado.")
 
-        print("Content generated")
-        self.state.final_post = result.raw
+    @listen(analyze_architecture)
+    def generate_diagrams(self):
+        print("Iniciando Crew de Desarrollo (Generación y Despliegue)...")
+        result = (
+            CrewDesarrollo()
+            .crew()
+            .kickoff(inputs={
+                "architecture_report": self.state.architecture_report,
+                "system_name": self.state.system_description[:20] #
+            })
+        )
+        self.state.deployment_log = result.raw
+        print("Generación y despliegue completado.")
 
-    @listen(generate_content)
-    def save_content(self):
-        print("Saving content")
+    @listen(generate_diagrams)
+    def save_final_results(self):
+        print("Guardando logs finales...")
         output_dir = Path("output")
         output_dir.mkdir(exist_ok=True)
-        with open(output_dir / "post.md", "w") as f:
-            f.write(self.state.final_post)
-        print("Post saved to output/post.md")
-
+        
+        with open(output_dir / "arquitectura_reporte.md", "w", encoding="utf-8") as f:
+            f.write(self.state.architecture_report)
+            
+        with open(output_dir / "despliegue_log.md", "w", encoding="utf-8") as f:
+            f.write(self.state.deployment_log)
+            
+        print("Proceso finalizado. Resultados en la carpeta 'output' y en Google Drive.")
 
 def kickoff():
-    content_flow = ContentFlow()
-    content_flow.kickoff()
-
-
-def plot():
-    content_flow = ContentFlow()
-    content_flow.plot()
-
-
-def run_with_trigger():
-    """
-    Run the flow with trigger payload.
-    """
-    import json
-    import sys
-
-    # Get trigger payload from command line argument
-    if len(sys.argv) < 2:
-        raise Exception("No trigger payload provided. Please provide JSON payload as argument.")
-
-    try:
-        trigger_payload = json.loads(sys.argv[1])
-    except json.JSONDecodeError:
-        raise Exception("Invalid JSON payload provided as argument")
-
-    # Create flow and kickoff with trigger payload
-    # The @start() methods will automatically receive crewai_trigger_payload parameter
-    content_flow = ContentFlow()
-
-    try:
-        result = content_flow.kickoff({"crewai_trigger_payload": trigger_payload})
-        return result
-    except Exception as e:
-        raise Exception(f"An error occurred while running the flow with trigger: {e}")
-
+    uml_flow = UMLFlow()
+    uml_flow.kickoff()
 
 if __name__ == "__main__":
     kickoff()
