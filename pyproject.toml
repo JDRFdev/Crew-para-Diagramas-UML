@@ -5,7 +5,8 @@ description = "Diagramas_UML using crewAI"
 authors = [{ name = "Juan Rodriguez", email = "2305juanda@gmail.com" }]
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "crewai[tools]==1.14.4"
+    "crewai[tools]==1.14.4",
+    "litellm>=1.87.0",
 ]
 
 [project.scripts]
